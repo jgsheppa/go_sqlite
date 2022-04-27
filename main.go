@@ -10,52 +10,35 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+
+
 func main() {
+
 	db, err := sql.Open("sqlite3", "shakespeare.db")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
 
-	var line string
+	var line, newURL string
+	var urls bool
+
 	flag.StringVar(&line, "line", "", "Player line")
+	flag.BoolVar(&urls, "url", false, "Open urls in browser")
+	flag.StringVar(&newURL, "add", "", "Adds new url to database")
 	flag.Parse()
-	if len(strings.TrimSpace(line)) == 0 {
-		log.Fatal("--line is required")
+	
+	switch true {
+	case len(strings.TrimSpace(line)) > 0:
+		search(db, line)
+		fmt.Print("1")
+	case urls:
+		openBrowser(db)
+	case len(strings.TrimSpace(newURL)) > 0:
+		insertURL(db, newURL)
 	}
 
-	var play, text string
-	var act, scene interface{}
 	
-	rows, err := db.Query(`
-	SELECT play, act, scene, plays.text
-	FROM playsearch
-	INNER JOIN plays ON playsearch.playsrowid = plays.rowid
-	WHERE playsearch.text MATCH ?;
-	`, line)
-	if err != nil {
-    // handle this error better than this
-    panic(err)
-  }
-  defer rows.Close()
-  for rows.Next() {
-		err =	rows.Scan(
-				&play, &act, &scene, &text,
-			)
-		if err != nil {
-			// handle this error
-			log.Fatal(err)
-		}
-	
-		var actAndScene string
-		if len(act.(string)) > 0 && len(scene.(string)) > 0 {
-			actAndScene = act.(string) +"."+scene.(string)+":"
-			fmt.Printf("%s %s %q\n", play, actAndScene, text)
-		}
-
-		fmt.Printf("%s %q\n", play, text)
-	}
-
 	if err != nil {
 		log.Fatal(err)
 	}
